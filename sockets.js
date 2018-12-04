@@ -1,6 +1,8 @@
 var socketIO = require('socket.io'),
     uuid = require('node-uuid'),
-    crypto = require('crypto');
+    crypto = require('crypto'),
+    appRoot = require('app-root-path'),
+    fs = require('fs');
 
 module.exports = function (server, config) {
     var io = socketIO.listen(server);
@@ -100,7 +102,7 @@ module.exports = function (server, config) {
 
 
         // tell client about stun and turn servers and generate nonces
-        client.emit('stunservers', config.stunservers || []);
+        // client.emit('stunservers', config.stunservers || []);
 
         // create shared secret nonces for TURN authentication
         // the process is described in draft-uberti-behave-turn-rest
@@ -108,16 +110,21 @@ module.exports = function (server, config) {
         // allow selectively vending turn credentials based on origin.
         var origin = client.handshake.headers.origin;
         if (!config.turnorigins || config.turnorigins.indexOf(origin) !== -1) {
+            let username, credential;
+            if (fs.existsSync(appRoot + '/config/turnauth.json')) {
+                let turnauth = JSON.parse(fs.readFileSync(appRoot + '/config/turnauth.json'));
+                username = turnauth.username;
+                credential = turnauth.credential;
+            }
             config.turnservers.forEach(function (server) {
-                var hmac = crypto.createHmac('sha1', server.secret);
-                // default to 86400 seconds timeout unless specified
-                var username = Math.floor(new Date().getTime() / 1000) + (parseInt(server.expiry || 86400, 10)) + "";
-                hmac.update(username);
-                credentials.push({
-                    username: username,
-                    credential: hmac.digest('base64'),
+                const credentialValue = { 
                     urls: server.urls || server.url
-                });
+                }
+                if (username && credential) {
+                    credentialValue.username = username;
+                    credentialValue.credential = credential;
+                }
+                credentials.push(credentialValue);
             });
         }
         client.emit('turnservers', credentials);
