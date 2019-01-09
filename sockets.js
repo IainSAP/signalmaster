@@ -102,7 +102,7 @@ module.exports = function (server, config) {
 
 
         // tell client about stun and turn servers and generate nonces
-        // client.emit('stunservers', config.stunservers || []);
+        client.emit('stunservers', config.stunservers || []);
 
         // create shared secret nonces for TURN authentication
         // the process is described in draft-uberti-behave-turn-rest
@@ -115,17 +115,17 @@ module.exports = function (server, config) {
                 let turnauth = JSON.parse(fs.readFileSync(appRoot + '/config/turnauth.json'));
                 username = turnauth.username;
                 credential = turnauth.credential;
+                config.turnservers.forEach(function (server) {
+                    const credentialValue = { 
+                        urls: server.urls || server.url
+                    }
+                    if (username && credential) {
+                        credentialValue.username = username;
+                        credentialValue.credential = credential;
+                    }
+                    credentials.push(credentialValue);
+                });
             }
-            config.turnservers.forEach(function (server) {
-                const credentialValue = { 
-                    urls: server.urls || server.url
-                }
-                if (username && credential) {
-                    credentialValue.username = username;
-                    credentialValue.credential = credential;
-                }
-                credentials.push(credentialValue);
-            });
         }
         client.emit('turnservers', credentials);
     });
