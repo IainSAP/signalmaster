@@ -4,6 +4,9 @@ var socketIO = require('socket.io'),
     appRoot = require('app-root-path'),
     fs = require('fs');
 
+const cron = require('node-cron');
+const { spawn } = require('child_process');
+
 module.exports = function (server, config) {
     var io = socketIO.listen(server);
 
@@ -156,3 +159,19 @@ function safeCb(cb) {
         return function () {};
     }
 }
+
+
+const updateTurnAuth = () => {
+    if (fs.existsSync('updateTurnServer.js')) { // Only found app executed from webrtc root
+        const result = spawn('node', ['updateTurnServer.js']);
+        console.log('updateTurnServer result:', result);
+    }
+    else {
+        console.log('updateTurnServer script not found');
+    }
+}
+// Run at 12:00 AM every day
+cron.schedule('0 0 0 * * *', () => {
+  console.log('Calling update TURN auth process');
+  updateTurnAuth();
+});
