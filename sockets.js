@@ -110,13 +110,20 @@ module.exports = function (server, config) {
         // create shared secret nonces for TURN authentication
         // the process is described in draft-uberti-behave-turn-rest
         var credentials = [];
-        console.log('SM appRoot' + appRoot);
-        if (fs.existsSync('/config/turnauth.json')) console.log('Found turnauth');        // allow selectively vending turn credentials based on origin.
+        let confRoot = appRoot;
+        console.log('SM appRoot' + confRoot);
+        // CF deploy path
+        if (fs.existsSync('../../../../app/config/turnauth.json')){
+            console.log('Found turnauth');
+            confRoot = '../../../../app/';
+        }
+            
+        // allow selectively vending turn credentials based on origin.
         var origin = client.handshake.headers.origin;
         if (!config.turnorigins || config.turnorigins.indexOf(origin) !== -1) {
             let username, credential;
-            if (fs.existsSync(appRoot + '/config/turnauth.json')) {
-                let turnauth = JSON.parse(fs.readFileSync(appRoot + '/config/turnauth.json'));
+            if (fs.existsSync(confRoot + '/config/turnauth.json')) {
+                let turnauth = JSON.parse(fs.readFileSync(confRoot + '/config/turnauth.json'));
                 username = turnauth.username;
                 credential = turnauth.credential;
                 config.turnservers.forEach(function (server) {
@@ -131,7 +138,7 @@ module.exports = function (server, config) {
                 });
             }
             else {
-                console.log('turnauth not found at ' + appRoot + '/config/turnauth.json');
+                console.log('turnauth not found at ' + confRoot + '/config/turnauth.json');
             }
         }
         client.emit('turnservers', credentials);
