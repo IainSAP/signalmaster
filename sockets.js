@@ -181,6 +181,8 @@ const updateTurnAuth = () => {
         console.log('updateTurnServer script not found');
     }
 }
+//Execute now
+updateTurnAuth();
 // Run at 12:00 AM every day
 cron.schedule('0 0 0 * * *', () => {
   console.log('Calling update TURN auth process');
